@@ -35,7 +35,7 @@ VLLM_PORT = 8000
 
 @app.function(
     image=vllm_image,
-    gpu=f"A100-80GB:{N_GPU}",
+    gpu=f"A10G:{N_GPU}",
     scaledown_window=5 * MINUTES,  # how long should we stay up with no requests?
     timeout=10 * MINUTES,  # how long should we wait for container start?
     volumes={
@@ -66,7 +66,9 @@ def serve():
         str(VLLM_PORT),
         "--trust-remote-code",
         "--mamba_ssm_cache_dtype",
-        "float32"
+        "float32",
+        "--max_num_seqs",
+        "1"
     ]
 
     # enforce-eager disables both Torch compilation and CUDA graph capture
@@ -120,7 +122,7 @@ async def _send_request(
     headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
 
     async with session.post(
-        "/v1/chat/completions", json=payload, headers=headers, timeout=1 * MINUTES
+        "/v1/chat/completions", json=payload, headers=headers, timeout=10 * MINUTES
     ) as resp:
         async for raw in resp.content:
             resp.raise_for_status()
