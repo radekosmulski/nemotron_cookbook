@@ -9,24 +9,21 @@ vllm_image = (
     .pip_install(
         "huggingface_hub[hf_transfer]==0.32.0",
         "flashinfer-python==0.2.6.post1",
-        extra_index_url="https://download.pytorch.org/whl/cu128",
-    ).apt_install(
-        "git"
-    ).run_commands([
-        "git clone https://github.com/vllm-project/vllm.git && cd vllm && git checkout bf756321c72340466911b64602e88013d0210c1c &&VLLM_USE_PRECOMPILED=1 pip install -e ."
-    ])
-    .env({"HF_HUB_ENABLE_HF_TRANSFER": "1"})  # faster model transfers
+        extra_index_url="https://download.pytorch.org/whl/cu128"
+    ).pip_install(
+        "vllm==0.10.2",
+        extra_index_url="https://wheels.vllm.ai/0.10.2",
+    ).env({"HF_HUB_ENABLE_HF_TRANSFER": "1"})  # faster model transfers
 )
 
 MODEL_NAME = "nvidia/NVIDIA-Nemotron-Nano-9B-v2"
-MODEL_REVISION = "a550406edfd97382430081b6485bb26c93afc168"  # avoid nasty surprises when repos update!
 
 hf_cache_vol = modal.Volume.from_name("huggingface-cache", create_if_missing=True)
 vllm_cache_vol = modal.Volume.from_name("vllm-cache", create_if_missing=True)
 
 FAST_BOOT = True
 
-app = modal.App("example-vllm-inference")
+app = modal.App("nemotron9B_v2-vllm-inference")
 
 N_GPU = 1
 MINUTES = 60  # seconds
@@ -55,8 +52,6 @@ def serve():
         "serve",
         "--uvicorn-log-level=info",
         MODEL_NAME,
-        "--revision",
-        MODEL_REVISION,
         "--served-model-name",
         MODEL_NAME,
         "llm",
